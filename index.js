@@ -9,8 +9,14 @@ dotenv.config();
 
 // Initialize Express app
 const app = express();
-const port = 3000;
-app.use(cors());
+const port = process.env.PORT || 3000;
+app.get('/', (req, res) => {
+  res.send('Backend is running');
+});
+app.use(cors({
+  origin: ["https://your-frontend-domain.com"],
+  methods: ["GET"],
+}));
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
