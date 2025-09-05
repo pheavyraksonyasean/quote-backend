@@ -14,7 +14,9 @@ app.get('/', (req, res) => {
   res.send('Backend is running');
 });
 app.use(cors({
-  origin: ["https://your-frontend-domain.com"],
+  origin: ["https://quote-generator-omega-tawny.vercel.app/",
+    "http://localhost:3000"
+  ],
   methods: ["GET"],
 }));
 
