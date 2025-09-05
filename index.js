@@ -1,56 +1,48 @@
-// Import required packages
-import express from 'express';
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import cors from 'cors';
+import express from "express";
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+import cors from "cors";
 
-// Load environment variables from .env file
 dotenv.config();
 
-// Initialize Express app
 const app = express();
-const port = process.env.PORT || 3000;
-app.get('/', (req, res) => {
-  res.send('Backend is running');
-});
+const PORT = process.env.PORT || 3000;
+
+// CORS: allow frontend + local
 app.use(cors({
-  origin: ["https://quote-generator-omega-tawny.vercel.app/",
+  origin: [
+    "https://quote-generator-omega-tawny.vercel.app", // ✅ fixed
     "http://localhost:3000"
   ],
   methods: ["GET"],
 }));
 
-// Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Health check
+app.get("/", (_req, res) => res.send("Backend is running"));
+app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
-// 🎯 Define the API endpoint for getting a random quote
-app.get('/api/random-quote', async (req, res) => {
+// Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
+// Random quote endpoint
+app.get("/api/random-quote", async (_req, res) => {
   try {
-    // Call the 'get_random_quote' database function (RPC)
-    const { data, error } = await supabase.rpc('get_random_quote');
+    const { data, error } = await supabase.rpc("get_random_quote");
+    if (error) throw error;
 
-    if (error) {
-      throw error; // Throw error to be caught by the catch block
-    }
+    const quote = data?.[0];
+    if (quote) return res.json(quote);
 
-    // Supabase RPC returns an array, so we get the first item
-    const quote = data[0]; 
-
-    if (quote) {
-      res.json(quote);
-    } else {
-      res.status(404).json({ error: 'No quotes found.' });
-    }
-
-  } catch (error) {
-    console.error('Error fetching random quote:', error.message);
-    res.status(500).json({ error: 'An internal server error occurred.' });
+    res.status(404).json({ error: "No quotes found." });
+  } catch (err) {
+    console.error("Error fetching random quote:", err);
+    res.status(500).json({ error: "Internal server error." });
   }
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`🚀 Server running at http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
